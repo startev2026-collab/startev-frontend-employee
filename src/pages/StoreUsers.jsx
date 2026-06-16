@@ -37,7 +37,7 @@ export default function StoreUsers() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-xl)' }}>
         <div>
           <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 600, color: 'var(--text-main)' }}>Store Customers</h2>
-          <p style={{ color: 'var(--text-muted)', marginTop: 'var(--space-xs)' }}>Customers who have rented from this store</p>
+          <p style={{ color: 'var(--text-muted)', marginTop: 'var(--space-xs)' }}>Customers registered at this store</p>
         </div>
       </div>
 
