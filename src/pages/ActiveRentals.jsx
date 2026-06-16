@@ -14,6 +14,9 @@ export default function ActiveRentals() {
   const [batteryNumber, setBatteryNumber] = useState('');
   const [chargerNumber, setChargerNumber] = useState('');
   const [savingEquipment, setSavingEquipment] = useState(false);
+  // Return Modal State
+  const [returnRental, setReturnRental] = useState(null);
+  const [processingReturn, setProcessingReturn] = useState(false);
 
   useEffect(() => {
     fetchRentals();
@@ -69,6 +72,25 @@ export default function ActiveRentals() {
       toast.error(err.response?.data?.error || 'Failed to update equipment');
     } finally {
       setSavingEquipment(false);
+    }
+  };
+
+  const openReturnModal = (rental) => {
+    setReturnRental(rental);
+  };
+
+  const handleConfirmReturn = async () => {
+    if (!returnRental) return;
+    setProcessingReturn(true);
+    try {
+      await api.put(`/rentals/${returnRental.id}/return`);
+      toast.success('Bike returned successfully');
+      setReturnRental(null);
+      fetchRentals();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to return bike');
+    } finally {
+      setProcessingReturn(false);
     }
   };
 
@@ -130,9 +152,14 @@ export default function ActiveRentals() {
                   <td>{statusBadge(r.rental_status)}</td>
                   <td>
                     {r.rental_status === 'active' && (
-                      <button className="btn btn-secondary btn-sm" onClick={() => openEquipmentModal(r)}>
-                        <HiOutlineCog /> Equipment
-                      </button>
+                      <>
+                        <button className="btn btn-secondary btn-sm" onClick={() => openEquipmentModal(r)}>
+                          <HiOutlineCog /> Equipment
+                        </button>
+                        <button className="btn btn-primary btn-sm" style={{ marginLeft: '8px' }} onClick={() => openReturnModal(r)}>
+                          Return
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>
@@ -145,46 +172,72 @@ export default function ActiveRentals() {
       {/* Equipment Modal */}
       {equipmentRental && (
         <div className="modal-overlay fade-in">
-          <div className="modal-content slide-up" style={{ maxWidth: '400px' }}>
-            <h3 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 600, marginBottom: 'var(--space-md)' }}>
-              Update Equipment
-            </h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)' }}>
-              Update battery and charger numbers for {equipmentRental.bikes?.bike_model} (#{equipmentRental.bikes?.bike_number})
-            </p>
+          <div className="modal-content">
+            <div className="popup-accent blue"></div>
+            <div className="popup-body">
+              <div className="popup-icon blue">⚙️</div>
+              <h3>Update Equipment</h3>
+              <p>
+                Update battery and charger numbers for {equipmentRental.bikes?.bike_model} (#{equipmentRental.bikes?.bike_number})
+              </p>
 
-            <form onSubmit={handleSaveEquipment}>
-              <div className="form-group">
-                <label className="form-label">Battery Number</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. BAT-12345"
-                  value={batteryNumber}
-                  onChange={(e) => setBatteryNumber(e.target.value)}
-                />
-              </div>
+              <form onSubmit={handleSaveEquipment}>
+                <div className="form-group">
+                  <label className="form-label">Battery Number</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. BAT-12345"
+                    value={batteryNumber}
+                    onChange={(e) => setBatteryNumber(e.target.value)}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Charger Number</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. CHG-98765"
-                  value={chargerNumber}
-                  onChange={(e) => setChargerNumber(e.target.value)}
-                />
-              </div>
+                <div className="form-group">
+                  <label className="form-label">Charger Number</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. CHG-98765"
+                    value={chargerNumber}
+                    onChange={(e) => setChargerNumber(e.target.value)}
+                  />
+                </div>
 
-              <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-xl)', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setEquipmentRental(null)} disabled={savingEquipment}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={savingEquipment}>
-                  {savingEquipment ? 'Saving...' : 'Save Details'}
-                </button>
-              </div>
-            </form>
+                <div className="popup-actions" style={{ padding: '16px 0 0' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setEquipmentRental(null)} disabled={savingEquipment}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={savingEquipment}>
+                    {savingEquipment ? 'Saving...' : 'Save Details'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Return Confirmation Modal */}
+      {returnRental && (
+        <div className="modal-overlay fade-in">
+          <div className="modal-content">
+            <div className="popup-accent green"></div>
+            <div className="popup-body">
+              <div className="popup-icon green">✅</div>
+              <h3>Confirm Return</h3>
+              <p>
+                Are you sure, <strong>{returnRental.users?.name}</strong> given bike before expiry time and do not have any fine?
+              </p>
+            </div>
+            <div className="popup-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setReturnRental(null)} disabled={processingReturn}>
+                No
+              </button>
+              <button type="button" className="btn btn-success" onClick={handleConfirmReturn} disabled={processingReturn}>
+                {processingReturn ? 'Processing...' : 'Yes, Confirm'}
+              </button>
+            </div>
           </div>
         </div>
       )}
